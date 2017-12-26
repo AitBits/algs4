@@ -2,6 +2,7 @@ import edu.princeton.cs.algs4.Digraph;
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdIn;
 import edu.princeton.cs.algs4.StdOut;
+import java.util.Arrays;
 
 public class SAP {
 
@@ -41,7 +42,7 @@ public class SAP {
     while (!StdIn.isEmpty()) {
       int v = StdIn.readInt();
       int w = StdIn.readInt();
-      int length   = sap.length(v, w);
+      int length   = sap.length(Arrays.asList(new Integer [] {v}), Arrays.asList(new Integer [] {w}));
       int ancestor = sap.ancestor(v, w);
       StdOut.printf("length = %d, ancestor = %d\n", length, ancestor);
     }

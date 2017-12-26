@@ -85,57 +85,84 @@ public class SAPBFS {
   private int[] closestCommonVertex(Digraph graph, int destination) {
     Deque<Integer> queue = new ArrayDeque<>();
     boolean[] virtualMarked = new boolean[marked.length];
+    int[] virtualDistances = new int[distances.length];
 
-    for (int i = 0; i < marked.length; i++) virtualMarked[i] = marked[i];
+    int[] vertexDistPair = new int[] {-1, -1};
 
-    int distCom = 0;
-
-    if (marked[destination]) return new int[] {destination, distances[destination]};
+    if (marked[destination]) {
+      vertexDistPair[0] = destination;
+      vertexDistPair[1] = distances[destination];
+    }
     queue.addLast(destination);
+    virtualMarked[destination] = true;
 
     while (!queue.isEmpty()) {
       int processed = queue.removeFirst();
-      distCom++;
 
       for (int v : graph.adj(processed)) {
-        if (marked[v]) return new int[] {v, distances[v] + distCom};
         if (!virtualMarked[v]) {
           virtualMarked[v] = true;
+          virtualDistances[v] = virtualDistances[processed] + 1;
           queue.addLast(v);
+
+          if (marked[v]) {
+            if (vertexDistPair[0] == -1) {
+              vertexDistPair[0] = v;
+              vertexDistPair[1] = distances[v] + virtualDistances[v];
+            } else if (distances[v] + virtualDistances[v] < vertexDistPair[1]) {
+              vertexDistPair[0] = v;
+              vertexDistPair[1] = distances[v] + virtualDistances[v];
+            }
+          }
         }
       }
     }
 
-    return new int[] {-1, -1};
+    return vertexDistPair;
   }
 
   private int[] closestCommonVertex(Digraph graph, Iterable<Integer> destinations) {
     Deque<Integer> queue = new ArrayDeque<>();
     boolean[] virtualMarked = new boolean[marked.length];
+    int[] virtualDistances = new int[distances.length];
 
-    for (int i = 0; i < marked.length; i++) virtualMarked[i] = marked[i];
-
-    int distCom = 0;
+    int[] vertexDistPair = new int[] {-1, -1};
 
     for (int destination : destinations) {
-      if (marked[destination]) return new int[] {destination, distances[destination]};
+      if (marked[destination]) {
+
+        if (vertexDistPair[0] == -1 || distances[destination] < vertexDistPair[1]) {
+          vertexDistPair[0] = destination;
+          vertexDistPair[1] = distances[destination];
+        }
+      }
       queue.addLast(destination);
+      virtualMarked[destination] = true;
     }
 
     while (!queue.isEmpty()) {
       int processed = queue.removeFirst();
 
       for (int v : graph.adj(processed)) {
-        if (marked[v]) return new int[] {v, distances[v] + distCom};
         if (!virtualMarked[v]) {
           virtualMarked[v] = true;
+          virtualDistances[v] = virtualDistances[processed] + 1;
           queue.addLast(v);
+
+          if (marked[v]) {
+            if (vertexDistPair[0] == -1) {
+              vertexDistPair[0] = v;
+              vertexDistPair[1] = distances[v] + virtualDistances[v];
+            } else if (distances[v] + virtualDistances[v] < vertexDistPair[1]) {
+              vertexDistPair[0] = v;
+              vertexDistPair[1] = distances[v] + virtualDistances[v];
+            }
+          }
         }
       }
-      distCom++;
     }
 
-    return new int[] {-1, -1};
+    return vertexDistPair;
   }
 
   public boolean isReachable(int destination) {

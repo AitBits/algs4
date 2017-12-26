@@ -1,5 +1,6 @@
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.Digraph;
+import edu.princeton.cs.algs4.Topological;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
@@ -25,6 +26,21 @@ public class WordNet {
     nounMap = new HashMap<>();
     synsetMap = new HashMap<>();
 
+    while (inHypernyms.hasNextLine()) {
+      String[] hyperLine = inHypernyms.readLine().split(",");
+
+      for (int i = 1; i < hyperLine.length; i++) {
+        wordnet.addEdge(Integer.parseInt(hyperLine[0]), Integer.parseInt(hyperLine[i]));
+      }
+    }
+
+    if (!new Topological(wordnet).hasOrder()) throw new IllegalArgumentException();
+
+    for (int i = 0, root = 0; i < wordnet.V(); i++) {
+      if (wordnet.outdegree(i) == 0) root++;
+      if (root > 1) throw new IllegalArgumentException();
+    }
+
     for (String line : synsetsLines) {
       String[] splitLine = line.split(",");
       int id = Integer.parseInt(splitLine[0]);
@@ -35,14 +51,6 @@ public class WordNet {
         Set<Integer> mapping = nounMap.putIfAbsent(syn, new HashSet<Integer>(Arrays.asList(id)));
 
         if (mapping != null) mapping.add(id);
-      }
-    }
-
-    while (inHypernyms.hasNextLine()) {
-      String[] hyperLine = inHypernyms.readLine().split(",");
-
-      for (int i = 1; i < hyperLine.length; i++) {
-        wordnet.addEdge(Integer.parseInt(hyperLine[0]), Integer.parseInt(hyperLine[i]));
       }
     }
 

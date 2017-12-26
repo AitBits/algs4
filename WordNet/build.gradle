@@ -30,6 +30,7 @@ dependencies {
 }
 run {
     standardInput = System.in
+    args = ['wordnet/synsets.txt', 'wordnet/hypernyms.txt', 'wordnet/outcast5.txt', 'wordnet/outcast8.txt', 'wordnet/outcast11.txt']
 }
 
 // Define the main class for the application

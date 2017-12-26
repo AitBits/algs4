@@ -5,6 +5,6 @@
 
 public class App {
     public static void main(String[] args) {
-      SAP.main(new String[] {"wordnet/digraph1.txt"});
+      SAP.main(new String[] {"wordnet/digraph4.txt"});
     }
 }
