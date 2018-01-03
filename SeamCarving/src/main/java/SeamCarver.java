@@ -49,11 +49,11 @@ public class SeamCarver {
 
       double rxs = Math.pow((rightColor >>> 16) - (leftColor >>> 16), 2);
       double bxs = Math.pow((rightColor & 0xff) - (leftColor & 0xff), 2);
-      double gxs = Math.pow(((rightColor & 0x00ff00) >>> 8) - ((leftColor & 0x00ff00) >>> 8), 2);
+      double gxs = Math.pow(((rightColor & 0xff00) >>> 8) - ((leftColor & 0xff00) >>> 8), 2);
 
       double rys = Math.pow((upColor >>> 16) - (downColor >>> 16), 2);
       double bys = Math.pow((upColor & 0xff) - (downColor & 0xff), 2);
-      double gys = Math.pow(((upColor & 0x00ff00) >>> 8) - ((downColor & 0x00ff00) >>> 8), 2);
+      double gys = Math.pow(((upColor & 0xff00) >>> 8) - ((downColor & 0xff00) >>> 8), 2);
 
       eng = Math.sqrt(rxs + bxs + gxs + rys + bys + gys);
     }
