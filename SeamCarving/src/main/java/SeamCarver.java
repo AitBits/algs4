@@ -3,27 +3,54 @@ import edu.princeton.cs.algs4.IndexMinPQ;
 import java.awt.Color;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Arrays;
 
 public class SeamCarver {
-  private Picture picture;
+  private final List<Integer> reds;
+  private final List<Integer> greens;
+  private final List<Integer> blues;
+
+  private int height;
 
   public SeamCarver(Picture picture) {
     if (picture == null)
       throw new IllegalArgumentException("constructor called with null argument.");
+    this.height = picture.height();
 
-    this.picture = new Picture(picture);
+    reds = new ArrayList<>();
+    greens = new ArrayList<>();
+    blues = new ArrayList<>();
+
+    for (int i = 0; i < picture.width(); i++)
+      for (int j = 0; j < picture.height(); j++) {
+        Color color = picture.get(i, j);
+        reds.add(color.getRed());
+        greens.add(color.getGreen());
+        blues.add(color.getBlue());
+      }
   }
 
   public Picture picture() {
-    return new Picture(picture);
+    Picture newPicture = new Picture(width(), height());
+
+    for (int i = 0; i < width(); i++)
+      for (int j = 0; j < height(); j++) {
+        int pixelIdx = i * height() + j;
+        newPicture.set(
+            i, j, new Color(reds.get(pixelIdx), greens.get(pixelIdx), blues.get(pixelIdx)));
+      }
+    return newPicture;
   }
 
   public int width() {
-    return picture.width();
+    return reds.size() / height;
   }
 
   public int height() {
-    return picture.height();
+    return height;
   }
 
   public double energy(int x, int y) {
@@ -31,20 +58,20 @@ public class SeamCarver {
     double eng = 1000;
 
     if (x > 0 && x < width() - 1 && y > 0 && y < height() - 1) {
-      Color rightColor = picture.get(x + 1, y);
-      Color leftColor = picture.get(x - 1, y);
-      Color upColor = picture.get(x, y - 1);
-      Color downColor = picture.get(x, y + 1);
+      int rightIdx = (x + 1) * height() + y;
+      int leftIdx = (x - 1) * height() + y;
+      int downIdx = x * height() + y + 1;
+      int upIdx = x * height() + y - 1;
 
-      double Rxs = Math.pow(rightColor.getRed() - leftColor.getRed(), 2);
-      double Bxs = Math.pow(rightColor.getBlue() - leftColor.getBlue(), 2);
-      double Gxs = Math.pow(rightColor.getGreen() - leftColor.getGreen(), 2);
+      double Rxs = Math.pow(reds.get(rightIdx) - reds.get(leftIdx), 2);
+      double Bxs = Math.pow(blues.get(rightIdx) - blues.get(leftIdx), 2);
+      double Gxs = Math.pow(greens.get(rightIdx) - greens.get(leftIdx), 2);
 
-      double Rys = Math.pow(upColor.getRed() - downColor.getRed(), 2);
-      double Bys = Math.pow(upColor.getBlue() - downColor.getBlue(), 2);
-      double Gys = Math.pow(upColor.getGreen() - downColor.getGreen(), 2);
+      double Rys = Math.pow(reds.get(upIdx) - reds.get(downIdx), 2);
+      double Bys = Math.pow(blues.get(upIdx) - blues.get(downIdx), 2);
+      double Gys = Math.pow(greens.get(upIdx) - greens.get(downIdx), 2);
 
-      eng = Math.pow(Rxs + Bxs + Gxs + Rys + Bys + Gys, 0.5);
+      eng = Math.sqrt(Rxs + Bxs + Gxs + Rys + Bys + Gys);
     }
 
     return eng;
@@ -240,14 +267,13 @@ public class SeamCarver {
           || (i < seam.length - 1 && Math.abs(seam[i] - seam[i + 1]) > 1))
         throw new IllegalArgumentException();
 
-    Picture newPicture = new Picture(width(), height() - 1);
+    for (int i = width() - 1; i >= 0; i--) {
+      reds.remove(i * height() + seam[i]);
+      greens.remove(i * height() + seam[i]);
+      blues.remove(i * height() + seam[i]);
+    }
 
-    for (int i = 0; i < width(); i++)
-      for (int j = 0, k = 0; j < height(); j++, k++)
-        if (seam[i] != j) newPicture.set(i, k, picture.get(i, j));
-        else k--;
-
-    picture = newPicture;
+    height--;
   }
 
   public void removeVerticalSeam(int[] seam) {
@@ -260,13 +286,14 @@ public class SeamCarver {
           || (i < seam.length - 1 && Math.abs(seam[i] - seam[i + 1]) > 1))
         throw new IllegalArgumentException();
 
-    Picture newPicture = new Picture(width() - 1, height());
+    for (int i = 0; i < height(); i++) {
+      for (int j = seam[i]; j < width() - 1; j++) {
+        reds.set(j * height() + i, reds.get((j + 1) * height() + i));
+        greens.set(j * height() + i, greens.get((j + 1) * height() + i));
+        blues.set(j * height() + i, blues.get((j + 1) * height() + i));
+      }
+    }
 
-    for (int i = 0; i < height(); i++)
-      for (int j = 0, k = 0; j < width(); j++, k++)
-        if (seam[i] != j) newPicture.set(k, i, picture.get(j, i));
-        else k--;
-
-    picture = newPicture;
+    reds.subList((width() - 1) * height(), height() * width()).clear();
   }
 }
