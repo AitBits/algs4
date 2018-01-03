@@ -5,25 +5,38 @@ import java.util.Set;
 import java.util.HashSet;
 
 public class SeamCarver {
-  private Picture picture;
+  private final int[] colors;
+  private int height;
+  private int width;
+  private int hremoved;
 
   public SeamCarver(Picture picture) {
     if (picture == null)
       throw new IllegalArgumentException("constructor called with null argument.");
 
-    this.picture = new Picture(picture);
+    hremoved = 0;
+    height = picture.height();
+    width = picture.width();
+    colors = new int[picture.width() * picture.height()];
+
+    for (int i = 0; i < colors.length; i++) colors[i] = picture.get(i / height(), i % height()).getRGB();
   }
 
   public Picture picture() {
-    return new Picture(picture);
+    Picture newPicture = new Picture(width(), height());
+
+    for (int i  = 0; i < width(); i++)
+      for (int j = 0; j < height(); j++)
+        newPicture.set(i, j, new Color(colors[i * (height + hremoved) + j]));
+      return newPicture;
   }
 
   public int width() {
-    return picture.width();
+    return width;
   }
 
   public int height() {
-    return picture.height();
+    return height;
   }
 
   public double energy(int x, int y) {
@@ -31,18 +44,18 @@ public class SeamCarver {
     double eng = 1000;
 
     if (x > 0 && x < width() - 1 && y > 0 && y < height() - 1) {
-      Color rightColor = picture.get(x + 1, y);
-      Color leftColor = picture.get(x - 1, y);
-      Color upColor = picture.get(x, y - 1);
-      Color downColor = picture.get(x, y + 1);
+      int rightColor = colors[(x + 1) * (height + hremoved) + y];
+      int leftColor = colors[(x - 1) * (height + hremoved) + y];
+      int upColor = colors[x * (height + hremoved) + y - 1];
+      int downColor = colors[x * (height + hremoved) + y + 1];
 
-      double Rxs = Math.pow(rightColor.getRed() - leftColor.getRed(), 2);
-      double Bxs = Math.pow(rightColor.getBlue() - leftColor.getBlue(), 2);
-      double Gxs = Math.pow(rightColor.getGreen() - leftColor.getGreen(), 2);
+      double Rxs = Math.pow((rightColor >>> 16)  - (leftColor >>> 16), 2);
+      double Bxs = Math.pow((rightColor & 0xff) - (leftColor & 0xff), 2);
+      double Gxs = Math.pow(((rightColor & 0xff00) >>> 8) - ((leftColor & 0xff00) >>> 8), 2);
 
-      double Rys = Math.pow(upColor.getRed() - downColor.getRed(), 2);
-      double Bys = Math.pow(upColor.getBlue() - downColor.getBlue(), 2);
-      double Gys = Math.pow(upColor.getGreen() - downColor.getGreen(), 2);
+      double Rys = Math.pow((upColor >>> 16)  - (downColor >>> 16), 2);
+      double Bys = Math.pow((upColor & 0xff) - (downColor & 0xff), 2);
+      double Gys = Math.pow(((upColor & 0xff00) >>> 8) - ((downColor & 0xff00) >>> 8), 2);
 
       eng = Math.pow(Rxs + Bxs + Gxs + Rys + Bys + Gys, 0.5);
     }
@@ -240,14 +253,14 @@ public class SeamCarver {
           || (i < seam.length - 1 && Math.abs(seam[i] - seam[i + 1]) > 1))
         throw new IllegalArgumentException();
 
-    Picture newPicture = new Picture(width(), height() - 1);
+    for (int i = 0; i < width; i++) {
+      for (int j = seam[i]; j < height - 1; j++) {
+        colors[i * (height + hremoved) + j] = colors[i * (height + hremoved) + j + 1];
+      }
+    }
 
-    for (int i = 0; i < width(); i++)
-      for (int j = 0, k = 0; j < height(); j++, k++)
-        if (seam[i] != j) newPicture.set(i, k, picture.get(i, j));
-        else k--;
-
-    picture = newPicture;
+    hremoved++;
+    height--;
   }
 
   public void removeVerticalSeam(int[] seam) {
@@ -260,13 +273,12 @@ public class SeamCarver {
           || (i < seam.length - 1 && Math.abs(seam[i] - seam[i + 1]) > 1))
         throw new IllegalArgumentException();
 
-    Picture newPicture = new Picture(width() - 1, height());
+    for (int i = 0; i < height; i++) {
+      for (int j = seam[i]; j < width - 1; j++) {
+        colors[j * (height + hremoved) + i] = colors[(j + 1) * (height + hremoved) + i];
+      }
+    }
 
-    for (int i = 0; i < height(); i++)
-      for (int j = 0, k = 0; j < width(); j++, k++)
-        if (seam[i] != j) newPicture.set(k, i, picture.get(j, i));
-        else k--;
-
-    picture = newPicture;
+    width--;
   }
 }
