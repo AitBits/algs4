@@ -17,14 +17,14 @@ public class SeamCarver {
     colors = new int[picture.width() * picture.height()];
 
     for (int i = 0; i < colors.length; i++)
-      colors[i] = picture.get(i / height(), i % height()).getRGB();
+      colors[i] = picture.get(i / height, i % height).getRGB();
   }
 
   public Picture picture() {
-    Picture newPicture = new Picture(width(), height());
+    Picture newPicture = new Picture(width, height);
 
-    for (int i = 0; i < width(); i++)
-      for (int j = 0; j < height(); j++)
+    for (int i = 0; i < width; i++)
+      for (int j = 0; j < height; j++)
         newPicture.set(i, j, new Color(colors[i * (height + hremoved) + j]));
     return newPicture;
   }
@@ -38,10 +38,10 @@ public class SeamCarver {
   }
 
   public double energy(int x, int y) {
-    if (x < 0 || x > width() - 1 || y < 0 || y > height() - 1) throw new IllegalArgumentException();
+    if (x < 0 || x > width - 1 || y < 0 || y > height - 1) throw new IllegalArgumentException();
     double eng = 1000;
 
-    if (x > 0 && x < width() - 1 && y > 0 && y < height() - 1) {
+    if (x > 0 && x < width - 1 && y > 0 && y < height - 1) {
       int rightColor = colors[(x + 1) * (height + hremoved) + y];
       int leftColor = colors[(x - 1) * (height + hremoved) + y];
       int upColor = colors[x * (height + hremoved) + y - 1];
@@ -96,9 +96,9 @@ public class SeamCarver {
         continue;
       }
 
-      int rightIdx = (nextx + 1) * height() + nexty;
-      int upIdx = (nextx + 1) * height() + nexty - 1;
-      int downIdx = (nextx + 1) * height() + nexty + 1;
+      int rightIdx = (nextx + 1) * height + nexty;
+      int upIdx = (nextx + 1) * height + nexty - 1;
+      int downIdx = (nextx + 1) * height + nexty + 1;
 
       double rightCost = costs[rightIdx];
       double newRightCost = nextCost + energy(nextx + 1, nexty);
@@ -129,11 +129,11 @@ public class SeamCarver {
       }
     }
 
-    int[] path = new int[width()];
+    int[] path = new int[width];
 
     for (int curX = minX, curY = minY; curX >= 0; curX--) {
       path[curX] = curY;
-      curY += prev[curX * height() + curY];
+      curY += prev[curX * height + curY];
     }
 
     return path;
@@ -174,9 +174,9 @@ public class SeamCarver {
         continue;
       }
 
-      int downIdx = nextx * height() + nexty + 1;
-      int leftIdx = (nextx - 1) * height() + nexty + 1;
-      int rightIdx = (nextx + 1) * height() + nexty + 1;
+      int downIdx = nextx * height + nexty + 1;
+      int leftIdx = (nextx - 1) * height + nexty + 1;
+      int rightIdx = (nextx + 1) * height + nexty + 1;
 
       double downCost = costs[downIdx];
       double newDownCost = nextCost + energy(nextx, nexty + 1);
@@ -212,19 +212,19 @@ public class SeamCarver {
 
     for (int curX = minX, curY = minY; curY >= 0; curY--) {
       path[curY] = curX;
-      curX += prev[curX * height() + curY];
+      curX += prev[curX * height + curY];
     }
 
     return path;
   }
 
   public void removeHorizontalSeam(int[] seam) {
-    if (height() <= 1 || seam == null || seam.length != width())
+    if (height <= 1 || seam == null || seam.length != width)
       throw new IllegalArgumentException();
 
     for (int i = 0; i < seam.length; i++)
       if (seam[i] < 0
-          || seam[i] > height() - 1
+          || seam[i] > height - 1
           || (i < seam.length - 1 && Math.abs(seam[i] - seam[i + 1]) > 1))
         throw new IllegalArgumentException();
 
@@ -239,12 +239,12 @@ public class SeamCarver {
   }
 
   public void removeVerticalSeam(int[] seam) {
-    if (width() <= 1 || seam == null || seam.length != height())
+    if (width <= 1 || seam == null || seam.length != height)
       throw new IllegalArgumentException();
 
     for (int i = 0; i < seam.length; i++)
       if (seam[i] < 0
-          || seam[i] > width() - 1
+          || seam[i] > width - 1
           || (i < seam.length - 1 && Math.abs(seam[i] - seam[i + 1]) > 1))
         throw new IllegalArgumentException();
 
