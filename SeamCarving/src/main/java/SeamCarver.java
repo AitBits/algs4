@@ -1,8 +1,5 @@
 import edu.princeton.cs.algs4.Picture;
-import edu.princeton.cs.algs4.IndexMinPQ;
 import java.awt.Color;
-import java.util.Set;
-import java.util.HashSet;
 
 public class SeamCarver {
   private final int[] colors;
@@ -19,16 +16,17 @@ public class SeamCarver {
     width = picture.width();
     colors = new int[picture.width() * picture.height()];
 
-    for (int i = 0; i < colors.length; i++) colors[i] = picture.get(i / height(), i % height()).getRGB();
+    for (int i = 0; i < colors.length; i++)
+      colors[i] = picture.get(i / height(), i % height()).getRGB();
   }
 
   public Picture picture() {
     Picture newPicture = new Picture(width(), height());
 
-    for (int i  = 0; i < width(); i++)
+    for (int i = 0; i < width(); i++)
       for (int j = 0; j < height(); j++)
         newPicture.set(i, j, new Color(colors[i * (height + hremoved) + j]));
-      return newPicture;
+    return newPicture;
   }
 
   public int width() {
@@ -49,103 +47,91 @@ public class SeamCarver {
       int upColor = colors[x * (height + hremoved) + y - 1];
       int downColor = colors[x * (height + hremoved) + y + 1];
 
-      double Rxs = Math.pow((rightColor >>> 16)  - (leftColor >>> 16), 2);
-      double Bxs = Math.pow((rightColor & 0xff) - (leftColor & 0xff), 2);
-      double Gxs = Math.pow(((rightColor & 0xff00) >>> 8) - ((leftColor & 0xff00) >>> 8), 2);
+      double rxs = Math.pow((rightColor >>> 16) - (leftColor >>> 16), 2);
+      double bxs = Math.pow((rightColor & 0xff) - (leftColor & 0xff), 2);
+      double gxs = Math.pow(((rightColor & 0x00ff00) >>> 8) - ((leftColor & 0x00ff00) >>> 8), 2);
 
-      double Rys = Math.pow((upColor >>> 16)  - (downColor >>> 16), 2);
-      double Bys = Math.pow((upColor & 0xff) - (downColor & 0xff), 2);
-      double Gys = Math.pow(((upColor & 0xff00) >>> 8) - ((downColor & 0xff00) >>> 8), 2);
+      double rys = Math.pow((upColor >>> 16) - (downColor >>> 16), 2);
+      double bys = Math.pow((upColor & 0xff) - (downColor & 0xff), 2);
+      double gys = Math.pow(((upColor & 0x00ff00) >>> 8) - ((downColor & 0x00ff00) >>> 8), 2);
 
-      eng = Math.pow(Rxs + Bxs + Gxs + Rys + Bys + Gys, 0.5);
+      eng = Math.sqrt(rxs + bxs + gxs + rys + bys + gys);
     }
 
     return eng;
   }
 
   public int[] findHorizontalSeam() {
-    int[] prev = new int[width() * height()];
-    IndexMinPQ<Double> pq = new IndexMinPQ<>(width() * height());
+    if (height == 1) {
+      int[] ans = new int[width];
+      for (int i = 0; i < ans.length; i++) ans[i] = 0;
+      return ans;
+    }
+    if (width == 1) return new int[] {height / 2};
 
-    for (int i = 0; i < height(); i++) pq.insert(i, 1000.0);
+    int[] prev = new int[width * height];
+    double[] costs = new double[width * height];
 
-    int lastIdx;
-    Set<Integer> processed = new HashSet<>();
+    int minX = width - 1;
+    int minY = 0;
+    double minCost = -1;
 
-    while (true) {
-      double minCost = pq.minKey();
-      int minIdx = pq.delMin();
-      processed.add(minIdx);
-      int minx = minIdx / height();
-      int miny = minIdx % height();
+    for (int nextIdx = 0; nextIdx < height * width; nextIdx++) {
+      int nextx = nextIdx / height;
+      int nexty = nextIdx % height;
 
-      if (minx == width() - 1) {
-        lastIdx = minIdx;
-        break;
+      double nextCost;
+
+      if (nextx == 0) nextCost = 1000;
+      else nextCost = costs[nextIdx];
+
+      if (nextx == width - 1) {
+        if (nexty == 0) minCost = nextCost;
+        else if (nextCost < minCost) {
+          minCost = nextCost;
+          minX = nextx;
+          minY = nexty;
+        }
+
+        continue;
       }
 
-      int rightIdx = (minx + 1) * height() + miny;
-      int upIdx = (minx + 1) * height() + miny - 1;
-      int downIdx = (minx + 1) * height() + miny + 1;
+      int rightIdx = (nextx + 1) * height() + nexty;
+      int upIdx = (nextx + 1) * height() + nexty - 1;
+      int downIdx = (nextx + 1) * height() + nexty + 1;
 
-      if (!processed.contains(rightIdx)) {
-        if (!pq.contains(rightIdx)) {
-          pq.insert(rightIdx, minCost + energy(minx + 1, miny));
-          prev[rightIdx] = 0;
-        } else {
-          double rightCost = pq.keyOf(rightIdx);
-          double newCost = minCost + energy(minx + 1, miny);
+      double rightCost = costs[rightIdx];
+      double newRightCost = nextCost + energy(nextx + 1, nexty);
 
-          if (newCost < rightCost) {
-            pq.decreaseKey(rightIdx, newCost);
-            prev[rightIdx] = 0;
-          }
+      if (rightCost == 0 || newRightCost < rightCost) {
+        prev[rightIdx] = 0;
+        costs[rightIdx] = newRightCost;
+      }
+
+      if (nexty > 0) {
+        double upCost = costs[upIdx];
+        double newCost = nextCost + energy(nextx + 1, nexty - 1);
+
+        if (upCost == 0 || newCost < upCost) {
+          prev[upIdx] = 1;
+          costs[upIdx] = newCost;
         }
       }
 
-      if (!processed.contains(upIdx)) {
-        if (miny > 0) {
-          double newCost = minCost + energy(minx + 1, miny - 1);
-          if (!pq.contains(upIdx)) {
-            pq.insert(upIdx, newCost);
-            prev[upIdx] = 1;
-          } else {
-            double upCost = pq.keyOf(upIdx);
+      if (nexty < height - 1) {
+        double downCost = costs[downIdx];
+        double newCost = nextCost + energy(nextx + 1, nexty + 1);
 
-            if (newCost < upCost) {
-              pq.decreaseKey(upIdx, newCost);
-              prev[upIdx] = 1;
-            }
-          }
-        }
-      }
-
-      if (!processed.contains(downIdx)) {
-        if (miny < height() - 1) {
-          double newCost = minCost + energy(minx + 1, miny + 1);
-          if (!pq.contains(downIdx)) {
-            pq.insert(downIdx, newCost);
-            prev[downIdx] = -1;
-          } else {
-            double downCost = pq.keyOf(downIdx);
-
-            if (newCost < downCost) {
-              pq.decreaseKey(downIdx, newCost);
-              prev[downIdx] = -1;
-            }
-          }
+        if (downCost == 0 || newCost < downCost) {
+          prev[downIdx] = -1;
+          costs[downIdx] = newCost;
         }
       }
     }
 
-    int lastX = lastIdx / height();
-    int lastY = lastIdx % height();
-
-    if (lastX != width() - 1) throw new UnknownError("Something is wrong here!");
-
     int[] path = new int[width()];
 
-    for (int curX = lastX, curY = lastY; curX >= 0; curX--) {
+    for (int curX = minX, curY = minY; curX >= 0; curX--) {
       path[curX] = curY;
       curY += prev[curX * height() + curY];
     }
@@ -154,88 +140,77 @@ public class SeamCarver {
   }
 
   public int[] findVerticalSeam() {
-    int[] prev = new int[width() * height()];
-    IndexMinPQ<Double> pq = new IndexMinPQ<>(width() * height());
+    if (width == 1) {
+      int[] ans = new int[height];
+      for (int i = 0; i < ans.length; i++) ans[i] = 0;
+      return ans;
+    }
+    if (height == 1) return new int[] {width / 2};
 
-    for (int i = 0; i < width(); i++) pq.insert(i * height(), 1000.0);
+    int[] prev = new int[width * height];
+    double[] costs = new double[width * height];
 
-    int lastIdx;
-    Set<Integer> processed = new HashSet<>();
+    int minX = 0;
+    int minY = height - 1;
+    double minCost = -1;
 
-    while (true) {
-      double minCost = pq.minKey();
-      int minIdx = pq.delMin();
-      processed.add(minIdx);
-      int minx = minIdx / height();
-      int miny = minIdx % height();
+    for (int nextIdx = 0; nextIdx < height * width;) {
+      int nextx = nextIdx / height;
+      int nexty = nextIdx % height;
 
-      if (miny == height() - 1) {
-        lastIdx = minIdx;
-        break;
+      double nextCost;
+
+      if (nexty == 0) nextCost = 1000;
+      else nextCost = costs[nextIdx];
+
+      if (nexty == height - 1) {
+        if (nextx == 0) minCost = nextCost;
+        else if (nextCost < minCost) {
+          minCost = nextCost;
+          minX = nextx;
+          minY = nexty;
+        }
+        nextIdx += height;
+        continue;
       }
 
-      int downIdx = minx * height() + miny + 1;
-      int leftIdx = (minx - 1) * height() + miny + 1;
-      int rightIdx = (minx + 1) * height() + miny + 1;
+      int downIdx = nextx * height() + nexty + 1;
+      int leftIdx = (nextx - 1) * height() + nexty + 1;
+      int rightIdx = (nextx + 1) * height() + nexty + 1;
 
-      if (!processed.contains(downIdx)) {
-        if (!pq.contains(downIdx)) {
-          pq.insert(downIdx, minCost + energy(minx, miny + 1));
-          prev[downIdx] = 0;
-        } else {
-          double downCost = pq.keyOf(downIdx);
-          double newCost = minCost + energy(minx, miny + 1);
+      double downCost = costs[downIdx];
+      double newDownCost = nextCost + energy(nextx, nexty + 1);
 
-          if (newCost < downCost) {
-            pq.decreaseKey(downIdx, newCost);
-            prev[downIdx] = 0;
-          }
+      if (downCost == 0 || newDownCost < downCost) {
+        prev[downIdx] = 0;
+        costs[downIdx] = newDownCost;
+      }
+
+      if (nextx > 0) {
+        double leftCost = costs[leftIdx];
+        double newCost = nextCost + energy(nextx - 1, nexty + 1);
+
+        if (leftCost == 0 || newCost < leftCost) {
+          prev[leftIdx] = 1;
+          costs[leftIdx] = newCost;
         }
       }
 
-      if (!processed.contains(leftIdx)) {
-        if (minx > 0) {
-          double newCost = minCost + energy(minx - 1, miny + 1);
-          if (!pq.contains(leftIdx)) {
-            pq.insert(leftIdx, newCost);
-            prev[leftIdx] = 1;
-          } else {
-            double leftCost = pq.keyOf(leftIdx);
+      if (nextx < width - 1) {
+        double rightCost = costs[rightIdx];
+        double newCost = nextCost + energy(nextx + 1, nexty + 1);
 
-            if (newCost < leftCost) {
-              pq.decreaseKey(leftIdx, newCost);
-              prev[leftIdx] = 1;
-            }
-          }
+        if (rightCost == 0 || newCost < rightCost) {
+          prev[rightIdx] = -1;
+          costs[rightIdx] = newCost;
         }
       }
-
-      if (!processed.contains(rightIdx)) {
-        if (minx < width() - 1) {
-          double newCost = minCost + energy(minx + 1, miny + 1);
-          if (!pq.contains(rightIdx)) {
-            pq.insert(rightIdx, newCost);
-            prev[rightIdx] = -1;
-          } else {
-            double rightCost = pq.keyOf(rightIdx);
-
-            if (newCost < rightCost) {
-              pq.decreaseKey(rightIdx, newCost);
-              prev[rightIdx] = -1;
-            }
-          }
-        }
-      }
+      nextIdx = (nextIdx + height) % (height * width - 1);
     }
 
-    int lastX = lastIdx / height();
-    int lastY = lastIdx % height();
+    int[] path = new int[height];
 
-    if (lastY != height() - 1) throw new UnknownError("Something is wrong here!");
-
-    int[] path = new int[height()];
-
-    for (int curX = lastX, curY = lastY; curY >= 0; curY--) {
+    for (int curX = minX, curY = minY; curY >= 0; curY--) {
       path[curY] = curX;
       curX += prev[curX * height() + curY];
     }
