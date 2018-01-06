@@ -26,6 +26,7 @@ public class SeamCarver {
     for (int i = 0; i < width; i++)
       for (int j = 0; j < height; j++)
         newPicture.set(i, j, new Color(colors[i * (height + hremoved) + j]));
+
     return newPicture;
   }
 
